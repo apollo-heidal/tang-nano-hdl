@@ -1,4 +1,5 @@
-*.json
+**.json
 
-shift-led
+sipeed-example-led/pack*
 
+tang-nano.cst
