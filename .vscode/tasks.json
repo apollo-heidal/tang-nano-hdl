@@ -1,0 +1,49 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "options": {
+        "env": {
+            "DEVICE": "GW1N-LV1QN48C6/I5",
+            "BOARD": "tangnano"
+        }
+    },
+    "tasks": [
+        {
+            "label": "Verilog synthesize",
+            "type": "shell",
+            "command": "yosys",
+            "args": [
+                "-p",
+                "\"",
+                "read_verilog ${file};",
+                "synth_gowin -json ${fileBasenameNoExtension}.json",
+                "\""
+            ]
+        },
+        {
+            "label": "Verilog place-n-route",
+            "type": "shell",
+            "dependsOn": "Verilog synthesize",
+            "command": "nextpnr-gowin",
+            "args": [
+                "--json ${fileBasenameNoExtension}.json",
+                "--write pnr-${fileBasenameNoExtension}.json",
+                "--device $DEVICE",
+                "--cst ${workspaceFolder}/tang-nano.cst"
+            ]
+        },
+        {
+            "label": "Pack design",
+            "type": "shell",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "Verilog synthesize",
+                "Verilog place-n-route"
+            ],
+            "args": [
+                ""
+            ]
+        }
+    ]
+}
