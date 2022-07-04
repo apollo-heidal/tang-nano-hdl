@@ -6,44 +6,30 @@
         "env": {
             "DEVICE": "GW1N-LV1QN48C6/I5",
             "BOARD": "tangnano"
-        }
+        },
+        "cwd": "${fileDirname}"
     },
     "tasks": [
         {
             "label": "Verilog synthesize",
             "type": "shell",
-            "command": "yosys",
-            "args": [
-                "-p",
-                "\"",
-                "read_verilog ${file};",
-                "synth_gowin -json ${fileBasenameNoExtension}.json",
-                "\""
-            ]
+            "command": "yosys -p \"read_verilog ${file}; synth_gowin -json ${fileBasenameNoExtension}.json\""
         },
         {
             "label": "Verilog place-n-route",
             "type": "shell",
             "dependsOn": "Verilog synthesize",
-            "command": "nextpnr-gowin",
-            "args": [
-                "--json ${fileBasenameNoExtension}.json",
-                "--write pnr-${fileBasenameNoExtension}.json",
-                "--device $DEVICE",
-                "--cst ${workspaceFolder}/tang-nano.cst"
-            ]
+            "command": "nextpnr-gowin --json ${fileBasenameNoExtension}.json --write pnr-${fileBasenameNoExtension}.json --device $DEVICE --cst ${workspaceFolder}/tang-nano.cst"
         },
         {
             "label": "Pack design",
             "type": "shell",
-            "dependsOrder": "sequence",
-            "dependsOn": [
-                "Verilog synthesize",
-                "Verilog place-n-route"
-            ],
-            "args": [
-                ""
-            ]
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "dependsOn": "Verilog place-n-route",
+            "command": "gowin_pack -d $DEVICE -o pack-${fileBasenameNoExtension}.fs pnr-${fileBasenameNoExtension}.json"
         }
     ]
 }
