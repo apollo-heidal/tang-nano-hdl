@@ -1,5 +1,2 @@
 *.json
-
-sipeed-example-led/pack*
-
-tang-nano.cst
+*.fs
