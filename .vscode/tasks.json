@@ -19,7 +19,7 @@
             "label": "Verilog place-n-route",
             "type": "shell",
             "dependsOn": "Verilog synthesize",
-            "command": "nextpnr-gowin --json ${fileBasenameNoExtension}.json --write pnr-${fileBasenameNoExtension}.json --device $DEVICE --cst ${workspaceFolder}/tang-nano.cst"
+            "command": "nextpnr-gowin --json ${fileBasenameNoExtension}.json --write ${fileBasenameNoExtension}.pnr.json --device $DEVICE --cst ${workspaceFolder}/tang-nano.cst"
         },
         {
             "label": "Pack design",
@@ -29,7 +29,7 @@
                 "isDefault": true
             },
             "dependsOn": "Verilog place-n-route",
-            "command": "gowin_pack -d $DEVICE -o pack-${fileBasenameNoExtension}.fs pnr-${fileBasenameNoExtension}.json"
+            "command": "gowin_pack -d $DEVICE -o ${fileBasenameNoExtension}.pack.fs ${fileBasenameNoExtension}.pnr.json"
         }
     ]
 }
