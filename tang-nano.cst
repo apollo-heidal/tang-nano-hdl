@@ -1,10 +1,17 @@
 // Device: GW1N-LV1QN48C6/I5
 
-IO_LOC "sys_clk" 35;
-IO_LOC "sys_rst_n" 14;
-//IO_LOC "key" 15;
+IO_LOC "sys_clk"    35;
+IO_LOC "sys_rst_n"  14;
+IO_LOC "key"      15;
 
 // RGB LED
 IO_LOC "led[0]" 16;
 IO_LOC "led[1]" 17;
 IO_LOC "led[2]" 18;
+
+IO_LOC "bin_in"     38;
+IO_LOC "trig_in"    40;
+IO_LOC "trig_out"   39;
+
+IO_PORT "bin_in" PULL_MODE=UP;
+IO_PORT "trig_in" PULL_MODE=UP;
