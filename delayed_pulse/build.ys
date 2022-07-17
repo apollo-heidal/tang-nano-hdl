@@ -1,0 +1,5 @@
+read_verilog delayed_pulse.v top.v
+proc; opt
+techmap; opt
+synth_gowin
+write_json top.json
