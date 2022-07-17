@@ -1,60 +1,34 @@
-module external_trigger #(
-    parameter t_us_int  = 25_000,   // microseconds between trigger pulses
-    parameter t_us_trig = 50        // microseconds trig pulse width
+module delayed_pulse #(
+    parameter t_us_delay  = 25_000, // microseconds between pulses
+    parameter t_us_pulse_width = 50 // microseconds pulse width
 ) (
-    input sys_clk,
-    input bin_in,   // pull-up
-    input trig_out,  
+    input       sys_clk,
+    input       init,   // pull-up
+    input       pulse_disable,
 
-    output reg trig_in  // pull-up
+    output reg  pulse_out  // pull-up
 );
 
-localparam INT_MAX    = t_us_int * 12; // 12cycles / 1microsecond sys_clk
-localparam TRIG_MAX   = t_us_trig * 12;
+localparam PULSE_TICKS  = 24 * t_us_pulse_width;    // 24Mhz system clock
+localparam DELAY_TICKS  = 24 * t_us_delay;
 
-reg [$clog2(INT_MAX)-1:0]  int_counter  = 0;
-reg [$clog2(TRIG_MAX)-1:0] trig_counter = 0;
+reg [$clog2(PULSE_TICKS)-1:0]   pulse_cnt = 0;
+reg [$clog2(DELAY_TICKS)-1:0]   delay_cnt = 0;
 
-reg int_en;
-reg trig_en;
-
-// reg bin_in_test;
-// wire bin_in;
-// assign bin_in = bin_in_test;
-
-wire can_trig   = !bin_in && !trig_out; // bin and detector are ready
+wire pulse_start    = !init && !pulse_disable && (delay_cnt == 0);
+wire pulse_end      = (pulse_cnt == PULSE_TICKS);
+wire delay_end      = (delay_cnt == DELAY_TICKS);
 
 always @(posedge sys_clk) begin
-    if (can_trig && (int_counter == 0)) begin
-        trig_in <= 'b0;
-    end else if (!trig_in) begin    
-        if (trig_counter == TRIG_MAX) begin
-            trig_in <= 'b1;
-            trig_counter <= 0;
-        end else begin
-            trig_counter <= trig_counter + 1;
-        end
-    // end else if (int_counter == INT_MAX) begin
-    //     int_counter <= 0;
-    end else begin
-        int_counter <= int_counter + 1;
+    if (pulse_start) begin
+        pulse_out <= 'b0;
+    end else if (pulse_end) begin
+        pulse_out <= 'b1;
+        pulse_cnt <= 0;
+    end else if (delay_end) begin
+        delay_cnt <= 0;
     end
+    pulse_cnt <= pulse_cnt + 1;
+    delay_cnt <= delay_cnt + 1;
 end
-
-
-// //test variables
-// reg [23:0] bin_counter;
-
-// always @(posedge clk) begin
-//     if (bin_counter == 12_000_000) begin
-//         bin_in <= 'b0;
-//         bin_counter <= 0;
-//     end else if (bin_counter == 12_000) begin
-//         bin_in <= 'b1;
-//         bin_counter <= bin_counter + 1;
-//     end else begin
-//         bin_counter <= bin_counter + 1;
-//     end
-// end
-    
 endmodule
