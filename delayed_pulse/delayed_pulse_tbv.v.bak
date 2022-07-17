@@ -1,0 +1,43 @@
+`timescale 1ns/10ps
+
+module delay_pulse_tb();
+    wire out;
+
+    reg     clk     = 0;
+    reg     init    = 1;
+    reg     pd      = 0;
+
+    localparam DURATION = 55_000;
+
+    // main clock
+    always begin
+        #41.667     // Delay: 1 / ((2 * 41.67) * 1ns) ~= 12Mhz
+        clk = ~clk;
+    end
+
+    // init (external) pulse
+    always begin
+        init = 'b0;
+        #1
+        init = 'b1;        
+        #26000
+    end
+
+    delayed_pulse #() uut (
+        .sys_clk(clk),
+        .init(init),
+        .pulse_disable(pd),
+        .pulse_out(out)
+    );
+
+    initial begin
+        $dumpfile("pulsed_delay_tb.vcd");
+        $dumpvars(0, pulse_delay_tb);
+
+        #(DURATION)
+
+        $display("Finished");
+        $finish;
+    end
+
+endmodule
