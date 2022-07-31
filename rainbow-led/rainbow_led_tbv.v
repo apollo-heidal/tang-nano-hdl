@@ -1,13 +1,13 @@
-`timescale 1ns/10ps
+`timescale 10us/1us
 
 module rainbow_led_tb();
     reg clk = 0;
     reg b_a = 0;
     reg b_b = 0;
 
-    reg [2:0] led = 3'b000;
+    wire [2:0] led = 3'b000;
 
-    localparam DURATION = 100_000;
+    localparam DURATION = 1_000_000;
 
     // main clock
     always begin
@@ -15,7 +15,7 @@ module rainbow_led_tb();
         clk = ~clk;
     end
 
-    rainbow_led #() uut (
+    rainbow_led uut (
         .clk(clk),
         .button_a(b_a),
         .button_b(b_b),
