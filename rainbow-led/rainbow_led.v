@@ -18,15 +18,18 @@ localparam BLUE     = 3'b101;
 localparam GREEN    = 3'b110;
 localparam OFF      = 3'b111;
 
-localparam N_BASE_COLORS    = 6;    // 6 because WHITE/OFF are not part of this rainbow
-localparam N_SHIFT_COLORS   = 32;   // 32 different colors between 6 base colors
+localparam N_BASE_COLORS        = 6;    // 6 because WHITE/OFF are non-colors, in this case
+localparam N_M_COLORS_PER_BASE  = 5;    // num minor colors between eash base color
+localparam N_MINOR_COLORS       = N_M_COLORS_PER_BASE * N_BASE_COLORS;  // total num minor colors
 
-localparam CYCLE_SECS   = 10;                        // 6 seconds per rainbow cycle
-localparam CYCLE_TICKS  = 12_000_000 * CYCLE_SECS;  // clk ticks per rainbow cycle
-localparam SHIFT_TICKS  = CYCLE_TICKS / (N_BASE_COLORS * N_SHIFT_COLORS); // number of clk ticks in each shift slot
+localparam TICKS_PER_SEC        = 24_000_000;                       // system clk speed
+localparam RAINBOW_SECS         = 10;                               // seconds per rainbow cycle
+localparam RAINBOW_TICKS        = TICKS_PER_SEC * CYCLE_SECS;       // clk ticks per rainbow cycle
+localparam MINOR_COLOR_TICKS    = RAINBOW_TICKS / N_MINOR_COLORS;   // ticks per minor color
+localparam BLUR_TICKS           = MINOR_COLOR_TICKS / N_M_COLORS_PER_BASE; // number of clk ticks in each shift slot
 
-reg [$clog2(SHIFT_TICKS):0]         shift_cnt           = 0;
-wire                                shift_clk           = (shift_cnt == SHIFT_TICKS);
+reg [$clog2(BLUR_TICKS):0]  blur_cnt    = 0;
+wire                        blur_clk    = (blur_cnt == BLUR_TICKS);
 
 reg [$clog2(N_SHIFT_COLORS-1)-1:0]  shift_color_cnt     = 0;
 wire                                color_shift         = (shift_color_cnt == N_SHIFT_COLORS-1);
@@ -78,12 +81,12 @@ always @(posedge shift_clk) begin
     end
 end
 
-// drive shift clk
+// drive blur clk
 always @(posedge clk) begin
-    if (shift_cnt == SHIFT_TICKS) begin
-        shift_cnt <= 0;
+    if (blur_cnt == BLUR_TICKS) begin
+        blur_cnt <= 0;
     end else begin
-        shift_cnt <= shift_cnt + 1;
+        blur_cnt <= blur_cnt + 1;
     end
 end
 
