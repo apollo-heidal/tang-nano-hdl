@@ -1,31 +1,31 @@
-`timescale 1us/1ns
+`timescale 1us/10ns
 
-module example_tb();
-    reg clk;
+module clock_divider_tb();
+    reg clk = 0;
+    wire clk_a;
 
-    localparam DURATION = 1_000_000_000;
+    localparam DURATION = 1_000_000;
 
     // main clock
     always begin
-        #41.667     // Delay: 1 / ((2 * 41.67) * 1ns) ~= 12Mhz
+        #0.5
         clk = ~clk;
     end
 
-    rainbow_led uut (
-        .clk(clk),
-        .button_a(b_a),
-        .button_b(b_b),
-        .led(led)
+    clock_divider #(
+        .divisor(5)
+    ) uut (
+        .clk_in(clk),
+        .clk_out(clk_a)
     );
 
     initial begin
-        $dumpfile("rainbow_led_tb.vcd");
-        $dumpvars(0, rainbow_led_tb);
+        $dumpfile("clock_divider_tb.vcd");
+        $dumpvars(0, clock_divider_tb);
 
         #(DURATION)
 
         $display("Finished");
         $finish;
     end
-
 endmodule
