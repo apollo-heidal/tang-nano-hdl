@@ -18,7 +18,7 @@ module rainbow_led_tb();
         $dumpfile("rainbow_led_tb.vcd");
         $dumpvars(0, rainbow_led_tb);
 
-        #(1_000_000) // duration
+        #(10_000_000) // duration
 
         $display("Finished");
         $finish;
