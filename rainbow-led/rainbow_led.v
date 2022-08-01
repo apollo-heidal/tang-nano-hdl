@@ -18,13 +18,12 @@ module rainbow_led (
 
 // localparam N_BASE_COLORS        = 6;    // 6 because WHITE/OFF are non-colors, in this case
 // localparam N_COLORS_PER_BASE    = 5;    // num colors between eash base color
-localparam N_BLUR_COLORS        = 1000; // just for readability
-localparam C_W                  = $clog2(N_BLUR_COLORS); // color register width
+localparam N_BLUR_COLORS        = 50; // just for readability
 // localparam N_COLORS             = N_COLORS_PER_BASE * N_BASE_COLORS;  // total colors
 
-localparam TICKS_PER_MS     = 12_000;   // system clk speed
-localparam BLUR_WINDOW_MS   = 5;        // in milliseconds
-localparam BLUR_TICKS       = TICKS_PER_MS * BLUR_WINDOW_MS; // number of clk ticks in each blur window
+localparam TICKS_PER_US     = 12;   // system clk ticks per microsecond
+localparam BLUR_WINDOW_US   = 100;  // in microseconds
+localparam BLUR_TICKS       = TICKS_PER_US * BLUR_WINDOW_US; // number of clk ticks in each blur window
 
 // tracks blur clock;
 // blurring is achieve by each color being 
@@ -34,6 +33,9 @@ localparam BLUR_TICKS       = TICKS_PER_MS * BLUR_WINDOW_MS; // number of clk ti
 // determines the the resulting color
 reg [$clog2(BLUR_TICKS)-1:0]    blur_clk_cnt = 0;
 reg [$clog2(N_BLUR_COLORS):0]   color_clk_count = 0;
+
+wire shift_blur     = (blur_clk_cnt == BLUR_TICKS);
+wire shift_color    = (color_clk_count == N_BLUR_COLORS);
 
 // localparam BLUR_DIV         = TICKS_PER_MS / BLUR_WINDOW_MS;
 
@@ -55,6 +57,7 @@ reg [2:0] f_color;
 
 // if this reg is non-empty, the current color
 // is bias toward the "past" base color
+localparam C_W = $clog2(N_BLUR_COLORS);
 reg [C_W-1:0] p_color_bias;
 reg [C_W-1:0] last_p_color_bias;
 
@@ -64,8 +67,6 @@ reg [C_W-1:0] last_p_color_bias;
 
 // wire p_color_w_empty    = (p_color_w == 0);
 // wire f_color_w_empty    = (f_color_w == 0);
-wire shift_blur     = (blur_clk_cnt == BLUR_TICKS);
-wire shift_color    = (color_clk_count == N_BLUR_COLORS);
 // wire rst                = (blur_bias == 0);
 
 initial begin

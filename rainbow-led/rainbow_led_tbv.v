@@ -1,10 +1,10 @@
-`timescale 100ns/1ns
+`timescale 10ns/100ps
 
 module rainbow_led_tb();
     // main clock
     reg clk = 0;
     always begin
-        #1
+        #4.16666
         clk = ~clk;
     end
 
@@ -18,7 +18,7 @@ module rainbow_led_tb();
         $dumpfile("rainbow_led_tb.vcd");
         $dumpvars(0, rainbow_led_tb);
 
-        #(10_000_000) // duration
+        #(100_000_000) // duration
 
         $display("Finished");
         $finish;

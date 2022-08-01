@@ -8,7 +8,7 @@ IO_LOC "led[0]" 16;
 IO_LOC "led[1]" 17;
 IO_LOC "led[2]" 18;
 
-IO_LOC "clk"        35;
+IO_LOC "clk"            35;
 IO_LOC "init"           37;
 IO_LOC "pulse_out"      38;
 IO_LOC "pulse_disable"  39;
