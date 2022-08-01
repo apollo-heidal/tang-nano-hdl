@@ -18,11 +18,11 @@ module rainbow_led (
 
 // localparam N_BASE_COLORS        = 6;    // 6 because WHITE/OFF are non-colors, in this case
 // localparam N_COLORS_PER_BASE    = 5;    // num colors between eash base color
-localparam N_BLUR_COLORS        = 50; // just for readability
+localparam N_BLUR_COLORS        = 70; // just for readability
 // localparam N_COLORS             = N_COLORS_PER_BASE * N_BASE_COLORS;  // total colors
 
 localparam TICKS_PER_US     = 12;   // system clk ticks per microsecond
-localparam BLUR_WINDOW_US   = 100;  // in microseconds
+localparam BLUR_WINDOW_US   = 1000;  // in microseconds
 localparam BLUR_TICKS       = TICKS_PER_US * BLUR_WINDOW_US; // number of clk ticks in each blur window
 
 // tracks blur clock;
