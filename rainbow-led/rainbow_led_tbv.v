@@ -1,24 +1,16 @@
-`timescale 10us/1us
+`timescale 100ns/1ns
 
 module rainbow_led_tb();
-    reg clk = 0;
-    reg b_a = 0;
-    reg b_b = 0;
-
-    wire [2:0] led = 3'b000;
-
-    localparam DURATION = 1_000_000;
-
     // main clock
+    reg clk = 0;
     always begin
-        #41.667     // Delay: 1 / ((2 * 41.67) * 1ns) ~= 12Mhz
+        #1
         clk = ~clk;
     end
 
+    wire [2:0] led;
     rainbow_led uut (
         .clk(clk),
-        .button_a(b_a),
-        .button_b(b_b),
         .led(led)
     );
 
@@ -26,10 +18,9 @@ module rainbow_led_tb();
         $dumpfile("rainbow_led_tb.vcd");
         $dumpvars(0, rainbow_led_tb);
 
-        #(DURATION)
+        #(1_000_000) // duration
 
         $display("Finished");
         $finish;
     end
-
 endmodule

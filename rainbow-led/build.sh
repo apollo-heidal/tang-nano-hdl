@@ -4,7 +4,7 @@ BOARD='tangnano';
 
 # synthesis commands
 yosys -p \
-"read_verilog rainbow_led.v
+"read_verilog rainbow_led.v clock_divider.v
 proc; opt
 techmap; opt
 synth_gowin

@@ -13,13 +13,8 @@
 
 module rainbow_led (
     input clk,
-    input button_a,
-    input button_b,
-
     output reg [2:0] led
 );
-
-wire rst = !button_a;
 
 // base colors
 localparam WHITE    = 3'b000;
@@ -32,86 +27,142 @@ localparam GREEN    = 3'b110;
 localparam OFF      = 3'b111;
 
 localparam N_BASE_COLORS        = 6;    // 6 because WHITE/OFF are non-colors, in this case
-localparam N_M_COLORS_PER_BASE  = 3;    // num minor colors between eash base color
-localparam N_MINOR_COLORS       = N_M_COLORS_PER_BASE * N_BASE_COLORS;  // total num minor colors
+localparam N_COLORS_PER_BASE    = 5;    // num colors between eash base color
+localparam N_BLUR_COLORS        = N_COLORS_PER_BASE; // just for readability
+localparam C_W                  = $clog2(N_BLUR_COLORS); // color register width
+// localparam N_COLORS             = N_COLORS_PER_BASE * N_BASE_COLORS;  // total colors
 
-localparam TICKS_PER_SEC        = 24_000_000;                       // system clk speed
-localparam RAINBOW_SECS         = 10;                               // seconds per rainbow cycle
-localparam RAINBOW_TICKS        = TICKS_PER_SEC * RAINBOW_SECS;     // clk ticks per rainbow cycle
+localparam TICKS_PER_MS     = 24_000;   // system clk speed
+localparam BLUR_WINDOW_MS   = 2;        // in milliseconds
+localparam BLUR_TICKS       = TICKS_PER_MS * BLUR_WINDOW_MS; // number of clk ticks in each blur window
 
-localparam MINOR_COLOR_TICKS = RAINBOW_TICKS / N_MINOR_COLORS;   // ticks per minor color
-localparam BLUR_TICKS = MINOR_COLOR_TICKS / N_M_COLORS_PER_BASE; // number of clk ticks in each shift slot
+// localparam RAINBOW_SECS         = 10;                               // seconds per rainbow cycle
+// localparam RAINBOW_TICKS        = TICKS_PER_SEC * RAINBOW_SECS;     // clk ticks per rainbow cycle
 
-// drive blur color shift
-reg [$clog2(BLUR_TICKS)-1:0] blur_clk_cnt = 0;
-wire shift_blur_color = (blur_clk_cnt == BLUR_TICKS);
-always @(posedge clk) begin
-    if (shift_blur_color) begin
-        blur_clk_cnt <= 0;
-    end else begin
-        blur_clk_cnt <= blur_clk_cnt + 1;
+// localparam MINOR_COLOR_TICKS = RAINBOW_TICKS / N_MINOR_COLORS;   // ticks per minor color
+
+wire shift_blur;
+clock_divider #(
+    .divisor(TICKS_PER_MS / BLUR_WINDOW_MS)
+) clk1 (
+    .clk_in(clk),
+    .clk_out(shift_blur)
+);
+
+reg [2:0]       p_color;
+reg [2:0]       f_color;
+reg [C_W-1:0]   p_color_w;
+reg [C_W-1:0]   f_color_w;
+reg [C_W-1:0]   blur_bias; 
+
+wire p_color_w_empty = (p_color_w == 0);
+wire f_color_w_empty = (f_color_w == 0);
+
+initial begin
+    led         = RED;
+    p_color     = RED;
+    f_color     = BLUE;
+    p_color_w   = N_BLUR_COLORS; // initialize blur bias fully toward one color
+    f_color_w   = 'b0;
+    blur_bias   = N_BLUR_COLORS - 1; 
+end
+
+always @(posedge shift_blur) begin
+    if (!p_color_w_empty) begin
+        led <= p_color;
+        p_color_w <= p_color_w - 1;
+    end else if (!f_color_w_empty) begin
+        led <= f_color;
+        f_color_w <= f_color_w - 1;
     end
 end
 
-// drive minor color shift
-reg [$clog2(MINOR_COLOR_TICKS)-1:0] minor_clk_cnt = 0;
-wire shift_minor_color = (minor_clk_cnt == MINOR_COLOR_TICKS);
-always @(posedge clk) begin
-    if (shift_minor_color) begin
-        minor_clk_cnt <= 0;
-    end else begin
-        minor_clk_cnt <= minor_clk_cnt + 1;
+wire shift_color = (p_color_w_empty && f_color_w_empty);
+wire rst = (blur_bias == 0);
+always @(posedge shift_color) begin // DEBUG: never reached in sim
+    if (rst) blur_bias <= N_BLUR_COLORS;
+    else begin
+        p_color_w <= blur_bias;
+        f_color_w <= N_BLUR_COLORS - blur_bias;
+        blur_bias <= blur_bias - 1;
     end
 end
 
-// drive base color shift
-reg [$clog2(N_M_COLORS_PER_BASE)-1:0] base_clk_cnt = 0;
-wire shift_base_color = (base_clk_cnt == N_M_COLORS_PER_BASE);
-always @(posedge shift_minor_color) begin
-    if (shift_base_color) begin
-        base_clk_cnt <= 0;
-    end else begin
-        base_clk_cnt <= base_clk_cnt + 1;
-    end
+always @(posedge rst) begin
+    p_color <= f_color;
+    f_color <= p_color;
 end
 
-// shift base color
-always @(posedge shift_base_color) begin
-    past_base_color     <= future_base_color;
-    future_base_color   <= past_base_color;
-end
+// // drive blur color shift
+// reg [$clog2(BLUR_TICKS)-1:0] blur_clk_cnt = 0;
+// wire shift_blur_color = (blur_clk_cnt == BLUR_TICKS);
+// always @(posedge clk) begin
+//     if (shift_blur_color) begin
+//         blur_clk_cnt <= 0;
+//     end else begin
+//         blur_clk_cnt <= blur_clk_cnt + 1;
+//     end
+// end
 
-// reset to next minor color or pick current blur color
-reg [2:0] past_base_color    = RED;
-reg [2:0] future_base_color  = ~RED;
+// // drive minor color shift
+// reg [$clog2(MINOR_COLOR_TICKS)-1:0] minor_clk_cnt = 0;
+// wire shift_minor_color = (minor_clk_cnt == MINOR_COLOR_TICKS);
+// always @(posedge clk) begin
+//     if (shift_minor_color) begin
+//         minor_clk_cnt <= 0;
+//     end else begin
+//         minor_clk_cnt <= minor_clk_cnt + 1;
+//     end
+// end
 
-localparam W = $clog2(N_M_COLORS_PER_BASE)-1;
-reg [W:0] last_past_blur_col = 0;
-reg [W:0] last_fut_blur_col  = 0;
-reg [W:0] this_past_blur_col = N_M_COLORS_PER_BASE;
-reg [W:0] this_fut_blur_col  = 0;
+// // drive base color shift
+// reg [$clog2(N_M_COLORS_PER_BASE)-1:0] base_clk_cnt = 0;
+// wire shift_base_color = (base_clk_cnt == N_M_COLORS_PER_BASE);
+// always @(posedge shift_minor_color) begin
+//     if (shift_base_color) begin
+//         base_clk_cnt <= 0;
+//     end else begin
+//         base_clk_cnt <= base_clk_cnt + 1;
+//     end
+// end
 
-always @(shift_minor_color) begin
-    this_past_blur_col  <= last_past_blur_col - 1;
-    this_fut_blur_col   <= last_fut_blur_col + 1;
+// // shift base color
+// always @(posedge shift_base_color) begin
+//     past_base_color     <= future_base_color;
+//     future_base_color   <= past_base_color;
+// end
+
+// // reset to next minor color or pick current blur color
+// reg [2:0] past_base_color    = RED;
+// reg [2:0] future_base_color  = ~RED;
+
+// localparam W = $clog2(N_M_COLORS_PER_BASE)-1;
+// reg [W:0] last_past_blur_col = 0;
+// reg [W:0] last_fut_blur_col  = 0;
+// reg [W:0] this_past_blur_col = N_M_COLORS_PER_BASE;
+// reg [W:0] this_fut_blur_col  = 0;
+
+// always @(shift_minor_color) begin
+//     this_past_blur_col  <= last_past_blur_col - 1;
+//     this_fut_blur_col   <= last_fut_blur_col + 1;
     
-    last_past_blur_col  <= this_past_blur_col;
-    last_fut_blur_col   <= this_fut_blur_col;
+//     last_past_blur_col  <= this_past_blur_col;
+//     last_fut_blur_col   <= this_fut_blur_col;
     
-    this_past_blur_col  <= this_past_blur_col - 1;
-    this_fut_blur_col   <= this_fut_blur_col - 1;
-end
+//     this_past_blur_col  <= this_past_blur_col - 1;
+//     this_fut_blur_col   <= this_fut_blur_col - 1;
+// end
 
-wire p_empty = (this_past_blur_col  == 0);
-wire f_empty = (this_fut_blur_col   == 0);
+// wire p_empty = (this_past_blur_col  == 0);
+// wire f_empty = (this_fut_blur_col   == 0);
 
-always @(posedge shift_blur_color) begin
-    if (!p_empty) begin
-        led <= past_base_color;
-    end else if (!f_empty) begin
-        led <= future_base_color;
-    end else begin
-        led <= GREEN;
-    end
-end    
+// always @(posedge shift_blur_color) begin
+//     if (!p_empty) begin
+//         led <= past_base_color;
+//     end else if (!f_empty) begin
+//         led <= future_base_color;
+//     end else begin
+//         led <= GREEN;
+//     end
+// end    
 endmodule
